@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Walk Window</title>
+<meta name="description" content="Is it safe to walk the dog right now? Pavement heat, wind chill, air quality, and storm risk for your location.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A0C10;--s1:#0F1319;--s2:#161B24;--s3:#1E2535;
+  --border:#232B3A;--text:#E2E8F4;--muted:#7A8599;--dim:#3D4A60;
+  --safe:#34D399;--safe-dim:rgba(52,211,153,.12);--safe-b:rgba(52,211,153,.3);
+  --caution:#FBBF24;--caution-dim:rgba(251,191,36,.12);--caution-b:rgba(251,191,36,.3);
+  --danger:#F87171;--danger-dim:rgba(248,113,113,.12);--danger-b:rgba(248,113,113,.3);
+  --blue:#4F8EF7;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.65;min-height:100vh}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:200;background:rgba(10,12,16,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.nav-inner{max-width:720px;margin:0 auto;padding:0 20px;height:54px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;color:var(--text);text-decoration:none}
+.refresh-btn{background:none;border:1px solid var(--border);border-radius:7px;padding:6px 14px;color:var(--muted);font:500 13px 'Inter';cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
+.refresh-btn:hover{border-color:var(--safe);color:var(--safe)}
+.refresh-btn:disabled{opacity:.35;cursor:default;pointer-events:none}
+
+/* MAIN */
+.main{max-width:720px;margin:0 auto;padding:24px 20px 72px}
+
+/* LOCATION BAR */
+.loc-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;min-height:24px}
+.loc-name{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.upd-time{font-size:12px;color:var(--dim)}
+
+/* PERMISSION / LOADING / ERROR */
+.center-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:62vh;text-align:center;gap:14px;padding:0 20px}
+.big-icon{font-size:60px;margin-bottom:4px;line-height:1}
+.c-title{font-size:22px;font-weight:800;letter-spacing:-.02em}
+.c-sub{font-size:14px;color:var(--muted);max-width:360px;line-height:1.7}
+.btn-go{display:inline-flex;align-items:center;gap:7px;padding:12px 26px;background:var(--safe);color:#0A0C10;border:none;border-radius:9px;font:700 14px 'Inter';cursor:pointer;transition:filter .15s;margin-top:4px}
+.btn-go:hover{filter:brightness(1.1)}
+.spinner{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--safe);border-radius:50%;animation:spin .75s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* HERO */
+.hero{border-radius:16px;padding:28px 24px;margin-bottom:16px;border:1px solid;transition:background .3s,border-color .3s}
+.hero.safe{background:var(--safe-dim);border-color:var(--safe-b)}
+.hero.caution{background:var(--caution-dim);border-color:var(--caution-b)}
+.hero.danger{background:var(--danger-dim);border-color:var(--danger-b)}
+.hero-row{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.h-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+.hero.safe .h-dot{background:var(--safe);animation:hpulse 2.2s ease-in-out infinite}
+.hero.caution .h-dot{background:var(--caution)}
+.hero.danger .h-dot{background:var(--danger);animation:hpulse 1.2s ease-in-out infinite}
+@keyframes hpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+.h-label{font-size:26px;font-weight:800;letter-spacing:-.03em}
+.hero.safe .h-label{color:var(--safe)}
+.hero.caution .h-label{color:var(--caution)}
+.hero.danger .h-label{color:var(--danger)}
+.h-detail{font-size:14px;color:var(--muted)}
+.h-warn{font-size:13px;margin-top:5px;font-weight:500}
+.hero.safe .h-warn{color:var(--safe)}
+.hero.caution .h-warn{color:var(--caution)}
+.hero.danger .h-warn{color:var(--danger)}
+
+/* CONDITION CARDS */
+.conds{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}
+@media(max-width:540px){.conds{grid-template-columns:repeat(2,1fr)}}
+.cc{background:var(--s1);border:1px solid var(--border);border-radius:11px;padding:14px 14px 12px}
+.cc-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin-bottom:6px}
+.cc-val{font-size:19px;font-weight:800;line-height:1;letter-spacing:-.02em}
+.cc-sub{font-size:12px;margin-top:4px}
+.lv-safe .cc-val,.lv-safe .cc-sub{color:var(--safe)}
+.lv-caution .cc-val,.lv-caution .cc-sub{color:var(--caution)}
+.lv-danger .cc-val,.lv-danger .cc-sub{color:var(--danger)}
+
+/* BEST TIMES */
+.section-hd{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin-bottom:12px}
+.windows-box{background:var(--s1);border:1px solid var(--border);border-radius:11px;padding:16px 18px;margin-bottom:20px}
+.w-pills{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.wpill{padding:5px 13px;border-radius:20px;font-size:12px;font-weight:600;background:var(--safe-dim);color:var(--safe);border:1px solid var(--safe-b)}
+.wpill.none{background:var(--danger-dim);color:var(--danger);border-color:var(--danger-b)}
+
+/* TIMELINE */
+.tl-wrap{margin-bottom:16px}
+.timeline{display:flex;gap:5px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x mandatory;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.timeline::-webkit-scrollbar{height:3px}
+.timeline::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.hcell{flex:0 0 auto;width:50px;scroll-snap-align:start;background:var(--s1);border:1px solid var(--border);border-radius:9px;padding:9px 4px 7px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px}
+.hcell.now{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue)}
+.h-time{font-size:10px;color:var(--muted);font-weight:600}
+.h-dot{width:9px;height:9px;border-radius:50%}
+.d-safe{background:var(--safe)}.d-caution{background:var(--caution)}.d-danger{background:var(--danger)}
+.h-pav{font-size:10px;font-weight:700}
+.p-safe{color:var(--safe)}.p-caution{color:var(--caution)}.p-danger{color:var(--danger)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;align-items:center}
+.leg-i{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)}
+.leg-dot{width:8px;height:8px;border-radius:50%}
+.leg-note{margin-left:auto;font-size:11px;color:var(--dim)}
+@media(max-width:460px){.leg-note{display:none}}
+</style>
+</head>
+<body>
+
+<nav>
+<div class="nav-inner">
+  <span class="logo">🐾 Walk Window</span>
+  <button class="refresh-btn" id="rbtn" onclick="doRefresh()" disabled>
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+    Refresh
+  </button>
+</div>
+</nav>
+
+<div class="main">
+  <div class="loc-bar">
+    <div class="loc-name" id="loc-name"></div>
+    <div class="upd-time" id="upd-time"></div>
+  </div>
+  <div id="body">
+    <div class="center-screen">
+      <div class="big-icon">🐾</div>
+      <div class="c-title">Walk Window</div>
+      <div class="c-sub">Real-time safety check for your dog walk — pavement heat, feels-like temp, air quality, and storm risk for your exact location.</div>
+      <button class="btn-go" onclick="startApp()">📍 Use my location</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const WEATHER = 'https://api.open-meteo.com/v1/forecast';
+const AQ      = 'https://air-quality-api.open-meteo.com/v1/air-quality';
+const GEO     = 'https://nominatim.openstreetmap.org/reverse';
+
+let S = {}; // app state
+
+// ── Entry ───────────────────────────────────────────────
+
+function startApp() {
+  if (!navigator.geolocation) { showErr('Geolocation is not supported by your browser.'); return; }
+  showSpinner('Getting your location…');
+  navigator.geolocation.getCurrentPosition(onPos, onGeoErr, { timeout: 12000, enableHighAccuracy: false });
+}
+
+function onGeoErr(e) {
+  const m = { 1:'Location permission denied — please allow it and try again.',
+               2:'Could not determine your location.',
+               3:'Location request timed out.' };
+  showErr(m[e.code] || 'Could not get your location.');
+}
+
+async function onPos(pos) {
+  S.lat = pos.coords.latitude;
+  S.lon = pos.coords.longitude;
+  S.fetched = new Date();
+  showSpinner('Fetching weather…');
+  try {
+    const [city, wx, aq] = await Promise.all([
+      geocode(S.lat, S.lon),
+      fetchWx(S.lat, S.lon),
+      fetchAQ(S.lat, S.lon)
+    ]);
+    S.city = city; S.wx = wx; S.aq = aq;
+    render();
+    document.getElementById('rbtn').disabled = false;
+  } catch(e) {
+    showErr('Could not load weather data. ' + (e.message || ''));
+  }
+}
+
+async function doRefresh() {
+  document.getElementById('rbtn').disabled = true;
+  showSpinner('Refreshing…');
+  try {
+    const [wx, aq] = await Promise.all([fetchWx(S.lat, S.lon), fetchAQ(S.lat, S.lon)]);
+    S.wx = wx; S.aq = aq; S.fetched = new Date();
+    render();
+  } catch(e) {
+    showErr('Refresh failed. ' + (e.message || ''));
+  } finally {
+    document.getElementById('rbtn').disabled = false;
+  }
+}
+
+// ── API ─────────────────────────────────────────────────
+
+async function geocode(lat, lon) {
+  try {
+    const r = await fetch(`${GEO}?format=json&lat=${lat}&lon=${lon}&accept-language=en`, {
+      headers: { 'User-Agent': 'WalkWindow/1.0 (themarc.net)' }
+    });
+    const d = await r.json();
+    const a = d.address || {};
+    const city = a.city || a.town || a.village || a.county || '';
+    const st   = a.state_code || '';
+    return city ? (st ? `${city}, ${st}` : city) : 'Your location';
+  } catch { return 'Your location'; }
+}
+
+async function fetchWx(lat, lon) {
+  const p = new URLSearchParams({
+    latitude: lat, longitude: lon,
+    hourly: 'temperature_2m,apparent_temperature,precipitation,weathercode,windspeed_10m,direct_radiation,cloudcover',
+    current_weather: 'true',
+    temperature_unit: 'fahrenheit',
+    windspeed_unit: 'mph',
+    precipitation_unit: 'inch',
+    timezone: 'auto',
+    forecast_days: '1'
+  });
+  const r = await fetch(`${WEATHER}?${p}`);
+  if (!r.ok) throw new Error(`Weather API ${r.status}`);
+  return r.json();
+}
+
+async function fetchAQ(lat, lon) {
+  try {
+    const p = new URLSearchParams({
+      latitude: lat, longitude: lon,
+      hourly: 'us_aqi',
+      timezone: 'auto',
+      forecast_days: '1'
+    });
+    const r = await fetch(`${AQ}?${p}`);
+    if (!r.ok) return null;
+    return r.json();
+  } catch { return null; }
+}
+
+// ── Calculations ────────────────────────────────────────
+
+// Pavement can be 40-60°F above air at peak sun (1000 W/m² direct radiation).
+// At night or in shade radiation = 0, so pavement ≈ air temp.
+function pavTemp(airF, radWm2, cloudPct) {
+  if (!radWm2 || radWm2 <= 0) return Math.round(airF);
+  const add = (radWm2 / 1000) * 52 * Math.max(0, 1 - cloudPct / 110);
+  return Math.round(airF + add);
+}
+
+const WX_DESC = {
+  0:'Clear sky', 1:'Mostly clear', 2:'Partly cloudy', 3:'Overcast',
+  45:'Foggy', 48:'Icy fog',
+  51:'Light drizzle', 53:'Drizzle', 55:'Heavy drizzle',
+  61:'Light rain', 63:'Rain', 65:'Heavy rain',
+  71:'Light snow', 73:'Snow', 75:'Heavy snow', 77:'Ice pellets',
+  80:'Rain showers', 81:'Rain showers', 82:'Heavy showers',
+  85:'Snow showers', 86:'Heavy snow showers',
+  95:'Thunderstorm', 96:'Hail storm', 99:'Severe hail'
+};
+const WX_ICON = {
+  0:'☀️', 1:'🌤️', 2:'⛅', 3:'☁️',
+  45:'🌫️', 48:'🌫️',
+  51:'🌦️', 53:'🌦️', 55:'🌧️',
+  61:'🌧️', 63:'🌧️', 65:'🌧️',
+  71:'❄️', 73:'❄️', 75:'❄️', 77:'🌨️',
+  80:'🌧️', 81:'🌧️', 82:'⛈️',
+  85:'🌨️', 86:'🌨️',
+  95:'⛈️', 96:'⛈️', 99:'⛈️'
+};
+function wxd(c){ return WX_DESC[c] || 'Mixed'; }
+function wxi(c){ return WX_ICON[c] || '🌡️'; }
+
+function worst(a, b) {
+  return ['safe','caution','danger'].indexOf(a) >= ['safe','caution','danger'].indexOf(b) ? a : b;
+}
+
+function assessHour(wx, aqiArr, i) {
+  const airT   = wx.hourly.temperature_2m[i];
+  const feelsL = wx.hourly.apparent_temperature[i];
+  const wcode  = wx.hourly.weathercode[i];
+  const rad    = wx.hourly.direct_radiation[i];
+  const cloud  = wx.hourly.cloudcover[i];
+  const pav    = pavTemp(airT, rad, cloud);
+  const aqi    = (aqiArr && aqiArr[i] != null) ? aqiArr[i] : null;
+
+  let lvl = 'safe';
+  const warns = [];
+
+  // Pavement heat — primary danger for dogs
+  if (pav >= 130)      { lvl = worst(lvl,'danger');  warns.push(`Pavement ${pav}°F — burns paws in seconds`); }
+  else if (pav >= 110) { lvl = worst(lvl,'caution'); warns.push(`Pavement ${pav}°F — burns possible`); }
+  else if (pav >= 92)  { lvl = worst(lvl,'caution'); warns.push(`Pavement ${pav}°F — warm, check with hand`); }
+
+  // Feels like (heat stress / wind chill)
+  if      (feelsL >= 103) { lvl = worst(lvl,'danger');  warns.push(`Feels like ${Math.round(feelsL)}°F — extreme heat`); }
+  else if (feelsL >= 90)  { lvl = worst(lvl,'caution'); warns.push(`Feels like ${Math.round(feelsL)}°F — hot`); }
+  else if (feelsL <= 10)  { lvl = worst(lvl,'danger');  warns.push(`Feels like ${Math.round(feelsL)}°F — dangerous cold`); }
+  else if (feelsL <= 28)  { lvl = worst(lvl,'caution'); warns.push(`Feels like ${Math.round(feelsL)}°F — very cold`); }
+
+  // Precipitation / storms
+  if      (wcode >= 95) { lvl = worst(lvl,'danger');  warns.push('Thunderstorm'); }
+  else if (wcode >= 51) { lvl = worst(lvl,'caution'); warns.push(wxd(wcode)); }
+
+  // Air quality
+  if (aqi !== null) {
+    if      (aqi > 150) { lvl = worst(lvl,'danger');  warns.push(`AQI ${aqi} — unhealthy`); }
+    else if (aqi > 100) { lvl = worst(lvl,'caution'); warns.push(`AQI ${aqi} — sensitive groups`); }
+    else if (aqi > 50)  { lvl = worst(lvl,'caution'); warns.push(`AQI ${aqi} — moderate`); }
+  }
+
+  return { lvl, warns, pav, feelsL: Math.round(feelsL), aqi, wcode, airT };
+}
+
+function nowIdx(wx) {
+  const h = new Date().getHours();
+  const idx = wx.hourly.time.findIndex(t => parseInt(t.split('T')[1]) === h);
+  return idx >= 0 ? idx : 0;
+}
+
+function fmtHour(timeStr) {
+  const h = parseInt(timeStr.split('T')[1]);
+  if (h === 0) return '12a';
+  if (h < 12) return `${h}a`;
+  if (h === 12) return '12p';
+  return `${h-12}p`;
+}
+
+function fmtTime(d) {
+  return d.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' });
+}
+
+// ── Render ──────────────────────────────────────────────
+
+function render() {
+  const wx = S.wx;
+  const n  = wx.hourly.time.length;
+  const aqArr = S.aq?.hourly?.us_aqi || null;
+  const ni = nowIdx(wx);
+  const cw = wx.current_weather;
+
+  const assessed = Array.from({length: n}, (_, i) => assessHour(wx, aqArr, i));
+  const cur = assessed[ni];
+
+  // Location bar
+  document.getElementById('loc-name').innerHTML =
+    `<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${S.city || 'Your location'}`;
+  document.getElementById('upd-time').textContent = 'Updated ' + fmtTime(S.fetched);
+
+  // Hero labels
+  const heroLabel = { safe:'Good to go', caution:'Use caution', danger:'Stay in' };
+  const mainWarn  = cur.warns.length ? cur.warns[0] : (cur.lvl === 'safe' ? 'All conditions clear' : '');
+
+  // Condition cards
+  const pavLvl = cur.pav >= 130 ? 'danger' : cur.pav >= 92 ? 'caution' : 'safe';
+  const pavSub = cur.pav >= 130 ? 'Severe burn risk' : cur.pav >= 110 ? 'Burns possible' : cur.pav >= 92 ? 'Warm pavement' : 'Safe';
+
+  const flLvl  = cur.feelsL >= 103 || cur.feelsL <= 10 ? 'danger' : cur.feelsL >= 90 || cur.feelsL <= 28 ? 'caution' : 'safe';
+  const flSub  = cur.feelsL >= 103 ? 'Extreme heat' : cur.feelsL >= 90 ? 'Hot' : cur.feelsL <= 10 ? 'Dangerous cold' : cur.feelsL <= 28 ? 'Very cold' : 'Comfortable';
+
+  const curAqi  = aqArr ? aqArr[ni] : null;
+  const aqiLvl  = curAqi == null ? 'safe' : curAqi > 150 ? 'danger' : curAqi > 50 ? 'caution' : 'safe';
+  const aqiDisp = curAqi == null ? 'N/A' : `${curAqi}`;
+  const aqiSub  = curAqi == null ? 'No data' : curAqi > 150 ? 'Unhealthy' : curAqi > 100 ? 'Sensitive groups' : curAqi > 50 ? 'Moderate' : 'Good';
+
+  const wxLvl = cur.wcode >= 95 ? 'danger' : cur.wcode >= 51 ? 'caution' : 'safe';
+
+  // Find safe windows today
+  const windows = [];
+  let ws = -1;
+  for (let i = 0; i < n; i++) {
+    if (assessed[i].lvl === 'safe' && ws === -1) ws = i;
+    else if (assessed[i].lvl !== 'safe' && ws !== -1) { windows.push([ws, i-1]); ws = -1; }
+  }
+  if (ws !== -1) windows.push([ws, n-1]);
+
+  const pillsHtml = windows.length
+    ? windows.map(([s,e]) => {
+        const label = s === e ? fmtHour(wx.hourly.time[s])
+          : `${fmtHour(wx.hourly.time[s])} – ${fmtHour(wx.hourly.time[e])}`;
+        return `<span class="wpill">${label}</span>`;
+      }).join('')
+    : `<span class="wpill none">No good windows today</span>`;
+
+  // Timeline
+  const tlHtml = wx.hourly.time.map((t, i) => {
+    const a = assessed[i];
+    return `<div class="hcell${i===ni?' now':''}">
+      <div class="h-time">${i===ni?'Now':fmtHour(t)}</div>
+      <div class="h-dot d-${a.lvl}"></div>
+      <div class="h-pav p-${a.lvl}">${a.pav}°</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('body').innerHTML = `
+    <div class="hero ${cur.lvl}">
+      <div class="hero-row">
+        <div class="h-dot"></div>
+        <div class="h-label">${heroLabel[cur.lvl]}</div>
+      </div>
+      <div class="h-detail">${Math.round(cw.temperature)}°F · ${wxi(cw.weathercode)} ${wxd(cw.weathercode)} · ${Math.round(cw.windspeed)} mph wind</div>
+      ${mainWarn ? `<div class="h-warn">${mainWarn}</div>` : ''}
+    </div>
+
+    <div class="conds">
+      <div class="cc lv-${pavLvl}">
+        <div class="cc-label">Pavement</div>
+        <div class="cc-val">${cur.pav}°F</div>
+        <div class="cc-sub">${pavSub}</div>
+      </div>
+      <div class="cc lv-${flLvl}">
+        <div class="cc-label">Feels like</div>
+        <div class="cc-val">${cur.feelsL}°F</div>
+        <div class="cc-sub">${flSub}</div>
+      </div>
+      <div class="cc lv-${aqiLvl}">
+        <div class="cc-label">Air quality</div>
+        <div class="cc-val">${aqiDisp}</div>
+        <div class="cc-sub">${aqiSub}</div>
+      </div>
+      <div class="cc lv-${wxLvl}">
+        <div class="cc-label">Weather</div>
+        <div class="cc-val" style="font-size:24px">${wxi(cur.wcode)}</div>
+        <div class="cc-sub">${wxd(cur.wcode)}</div>
+      </div>
+    </div>
+
+    <div class="windows-box">
+      <div class="section-hd">Best walk times today</div>
+      <div class="w-pills">${pillsHtml}</div>
+    </div>
+
+    <div class="tl-wrap">
+      <div class="section-hd">Pavement temp — hour by hour</div>
+      <div class="timeline">${tlHtml}</div>
+      <div class="legend">
+        <div class="leg-i"><div class="leg-dot" style="background:var(--safe)"></div>Safe</div>
+        <div class="leg-i"><div class="leg-dot" style="background:var(--caution)"></div>Caution</div>
+        <div class="leg-i"><div class="leg-dot" style="background:var(--danger)"></div>Stay in</div>
+        <div class="leg-note">Pavement temp estimated from air temp + solar radiation</div>
+      </div>
+    </div>
+  `;
+
+  // Scroll timeline to current hour
+  setTimeout(() => {
+    const tl = document.querySelector('.timeline');
+    const now = document.querySelector('.hcell.now');
+    if (tl && now) tl.scrollLeft = Math.max(0, now.offsetLeft - tl.offsetWidth / 2 + 25);
+  }, 50);
+}
+
+function showSpinner(msg) {
+  document.getElementById('body').innerHTML = `
+    <div class="center-screen">
+      <div class="spinner"></div>
+      <div style="color:var(--muted);font-size:14px">${msg}</div>
+    </div>`;
+}
+
+function showErr(msg) {
+  document.getElementById('body').innerHTML = `
+    <div class="center-screen">
+      <div class="big-icon">😕</div>
+      <div class="c-title" style="font-size:18px">Something went wrong</div>
+      <div class="c-sub">${msg}</div>
+      <button class="btn-go" onclick="location.reload()">Try again</button>
+    </div>`;
+}
+
+// Auto-start if permission already granted
+if (navigator.permissions) {
+  navigator.permissions.query({name:'geolocation'}).then(p => {
+    if (p.state === 'granted') startApp();
+  }).catch(() => {});
+}
+</script>
+</body>
+</html>
