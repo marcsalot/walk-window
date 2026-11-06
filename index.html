@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Walk Window</title>
 <meta name="description" content="Safe to walk the dog? Pavement heat, air quality, rain, and the best hours for your location.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+<meta name="theme-color" content="#0A0C10">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -15,32 +17,32 @@
   --safe:#34D399;--safe-dim:rgba(52,211,153,.12);--safe-b:rgba(52,211,153,.3);
   --caution:#FBBF24;--caution-dim:rgba(251,191,36,.12);--caution-b:rgba(251,191,36,.3);
   --danger:#F87171;--danger-dim:rgba(248,113,113,.12);--danger-b:rgba(248,113,113,.3);
-  --blue:#4F8EF7;--input-bg:#0F1319;--nav-bg:rgba(10,12,16,.92);
+  --blue:#4F8EF7;--input-bg:#0F1319;--nav-bg:rgba(10,12,16,.92);--now-bg:rgba(79,142,247,.07);
 }
 [data-theme="midnight"]{
   --bg:#07090D;--s1:#0F1520;--s2:#172030;--border:#1E2D42;
   --text:#F0F4FF;--muted:#8295B5;--dim:#2D405A;
-  --blue:#5B9BFF;--input-bg:#0F1520;--nav-bg:rgba(7,9,13,.93);
+  --blue:#5B9BFF;--input-bg:#0F1520;--nav-bg:rgba(7,9,13,.93);--now-bg:rgba(91,155,255,.07);
 }
 [data-theme="dusk"]{
   --bg:#14101E;--s1:#1C1428;--s2:#241A34;--border:#3A2555;
   --text:#EDE6FF;--muted:#9B7DC8;--dim:#5A3D88;
-  --blue:#A78BFA;--input-bg:#1C1428;--nav-bg:rgba(20,16,30,.93);
+  --blue:#A78BFA;--input-bg:#1C1428;--nav-bg:rgba(20,16,30,.93);--now-bg:rgba(167,139,250,.07);
 }
 [data-theme="ocean"]{
   --bg:#06111F;--s1:#091828;--s2:#0D2035;--border:#152D47;
   --text:#E0F0FF;--muted:#6BA8D4;--dim:#1E3D5A;
-  --blue:#38BDF8;--input-bg:#091828;--nav-bg:rgba(6,17,31,.93);
+  --blue:#38BDF8;--input-bg:#091828;--nav-bg:rgba(6,17,31,.93);--now-bg:rgba(56,189,248,.07);
 }
 [data-theme="forest"]{
   --bg:#0B1810;--s1:#0F2015;--s2:#14281A;--border:#1E3824;
   --text:#E8F5EC;--muted:#6B9A78;--dim:#2E5038;
-  --blue:#4ADE80;--input-bg:#0F2015;--nav-bg:rgba(11,26,16,.93);
+  --blue:#4ADE80;--input-bg:#0F2015;--nav-bg:rgba(11,26,16,.93);--now-bg:rgba(74,222,128,.07);
 }
 [data-theme="light"]{
   --bg:#F0F4F8;--s1:#FFFFFF;--s2:#E8EDF3;--border:#C9D3DF;
   --text:#0D1829;--muted:#4A5568;--dim:#94A3B8;
-  --blue:#2563EB;--input-bg:#FFFFFF;--nav-bg:rgba(240,244,248,.94);
+  --blue:#2563EB;--input-bg:#FFFFFF;--nav-bg:rgba(240,244,248,.94);--now-bg:rgba(37,99,235,.06);
 }
 /* safe/caution/danger are consistent across all themes */
 [data-theme="midnight"],[data-theme="dusk"],[data-theme="ocean"],[data-theme="forest"]{
@@ -94,17 +96,17 @@ nav{position:sticky;top:0;z-index:300;background:var(--nav-bg);backdrop-filter:b
 .hero{position:relative;overflow:hidden;border-radius:16px;padding:28px 24px 24px;margin-bottom:14px;border:1px solid;transition:all .3s}
 .hero::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;transition:opacity .3s}
 .hero.safe{background:var(--s1);border-color:var(--safe-b)}
-.hero.safe::before{background:radial-gradient(ellipse 55% 80% at 10% 50%,rgba(52,211,153,.18),transparent 65%)}
+.hero.safe::before{background:radial-gradient(ellipse 55% 80% at 10% 50%,color-mix(in srgb,var(--safe) 22%,transparent),transparent 65%)}
 .hero.caution{background:var(--s1);border-color:var(--caution-b)}
-.hero.caution::before{background:radial-gradient(ellipse 55% 80% at 10% 50%,rgba(251,191,36,.18),transparent 65%)}
+.hero.caution::before{background:radial-gradient(ellipse 55% 80% at 10% 50%,color-mix(in srgb,var(--caution) 22%,transparent),transparent 65%)}
 .hero.danger{background:var(--s1);border-color:var(--danger-b)}
-.hero.danger::before{background:radial-gradient(ellipse 55% 80% at 10% 50%,rgba(248,113,113,.18),transparent 65%)}
+.hero.danger::before{background:radial-gradient(ellipse 55% 80% at 10% 50%,color-mix(in srgb,var(--danger) 22%,transparent),transparent 65%)}
 .badge-pill{display:inline-flex;align-items:center;gap:9px;padding:9px 20px;border-radius:999px;font-family:'Archivo',sans-serif;font-weight:900;font-size:19px;letter-spacing:-.02em;margin-bottom:12px;position:relative}
 .badge-icon{font-size:16px;display:flex;align-items:center}
-.hero.safe .badge-pill{background:var(--safe);color:#0A0C10}
-.hero.caution .badge-pill{background:var(--caution);color:#0A0C10}
+.hero.safe .badge-pill{background:var(--safe);color:#0D1829}
+.hero.caution .badge-pill{background:var(--caution);color:#0D1829}
 .hero.danger .badge-pill{background:var(--danger);color:#fff}
-[data-theme="light"] .hero.danger .badge-pill{color:#fff}
+/* danger text stays white on red across all themes */
 .h-conditions{font-size:13px;color:var(--muted);margin-bottom:5px;position:relative}
 .h-reason{font-size:13px;font-weight:600;position:relative}
 .hero.safe .h-reason{color:var(--safe)}
@@ -168,7 +170,7 @@ nav{position:sticky;top:0;z-index:300;background:var(--nav-bg);backdrop-filter:b
 .htable thead th{padding:8px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--dim);background:var(--s2);border-bottom:1px solid var(--border)}
 .htable tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
 .htable tbody tr:last-child{border-bottom:none}
-.htable tbody tr.now-row{background:rgba(79,142,247,.07)}
+.htable tbody tr.now-row{background:var(--now-bg)}
 .htable tbody tr:hover{background:var(--s2)}
 .htable td{padding:7px 10px;font-size:13px;vertical-align:middle}
 .td-time-cell{color:var(--muted);font-weight:700;font-size:12px;white-space:nowrap;letter-spacing:.01em;line-height:1.2}
@@ -408,11 +410,11 @@ function fmtH(ts) {
   if (h === 0) return '12a'; if (h < 12) return `${h}a`; if (h === 12) return '12p'; return `${h-12}p`;
 }
 
-function fmtDay(offset, short) {
-  if (offset === 0) return short ? 'Today' : 'Today';
+function fmtDay(offset, short = false) {
+  if (offset === 0) return 'Today';
   if (offset === 1) return short ? 'Tmrw' : 'Tomorrow';
   const d = new Date(); d.setDate(d.getDate() + offset);
-  return d.toLocaleDateString('en-US', { weekday: short ? 'short' : 'short', month: 'numeric', day: 'numeric' });
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' });
 }
 
 function fmtTime(d) { return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
@@ -447,7 +449,11 @@ function renderWinPills(wins, dayTimes) {
 }
 
 function hourWhy(a) {
-  if (a.lvl === 'safe') return `Pavement ${a.pav}° · feels ${a.feelsL}°`;
+  if (a.lvl === 'safe') {
+    const parts = [`Pavement ${a.pav}° · feels ${a.feelsL}°`];
+    if (a.rain >= 20) parts.push(`${a.rain}% rain`);
+    return parts.join(' · ');
+  }
   return a.warns[0] ? a.warns[0].replace(/°F/g, '°') : '';
 }
 
@@ -630,6 +636,13 @@ function updateChart() {
   const endLabel   = visTimes[visTimes.length - 1] ? fmtH(visTimes[visTimes.length - 1]) : '';
   const yLabel = S.chartMode === 'rain' ? 'Rain chance (%)' : 'Temperature (°F)';
 
+  const sliderHtml = max > 0
+    ? `<div class="slider-row">
+        <input type="range" id="chart-slider" min="0" max="${max}" value="${start}" oninput="handleSlider(this.value)">
+        <span class="rl" id="chart-rl">${startLabel} – ${endLabel}</span>
+      </div>`
+    : `<div class="slider-row" style="justify-content:flex-end"><span class="rl">${startLabel} – ${endLabel}</span></div>`;
+
   wrap.innerHTML = `<div class="chart-box">
     <div class="chart-tabs">
       <button class="ctab${S.chartMode === 'rain' ? ' active' : ''}" onclick="setChart('rain')">🌧 Rain</button>
@@ -638,11 +651,7 @@ function updateChart() {
     <div class="chart-y-label">${yLabel}</div>
     <div class="chart-area" id="chart-bars">${makeBars(vis, visTimes)}</div>
     <div class="chart-labels" id="chart-lbls">${labels}</div>
-    <div class="slider-row">
-      <input type="range" id="chart-slider" min="0" max="${max}" value="${start}"
-        oninput="handleSlider(this.value)">
-      <span class="rl" id="chart-rl">${startLabel} – ${endLabel}</span>
-    </div>
+    ${sliderHtml}
   </div>`;
 }
 
@@ -667,10 +676,13 @@ function selectDay(d) {
 
 // ── Theme ─────────────────────────────────────────────────────
 
+const THEME_BG = {dark:'#0A0C10',midnight:'#07090D',dusk:'#14101E',ocean:'#06111F',forest:'#0B1810',light:'#F0F4F8'};
 function applyTheme(t) {
   document.documentElement.setAttribute('data-theme', t);
   const btn = document.getElementById('tbtn');
   if (btn) btn.textContent = THEME_ICON[t] || '🎨';
+  const tc = document.querySelector('meta[name="theme-color"]');
+  if (tc) tc.setAttribute('content', THEME_BG[t] || '#0A0C10');
 }
 function cycleTheme() {
   S.theme = THEMES[(THEMES.indexOf(S.theme) + 1) % THEMES.length];
