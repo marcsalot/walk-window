@@ -224,10 +224,8 @@ nav{position:sticky;top:0;z-index:300;background:var(--nav-bg);backdrop-filter:b
   </div>
   <div id="body">
     <div class="cscreen">
-      <div class="big-icon">🐾</div>
-      <div class="c-title">Walk Window</div>
-      <div class="c-sub">Real-time dog walk safety — pavement heat, air quality, rain, and the best hours for your exact location.</div>
-      <button class="btn-go" onclick="startApp()">📍 Use my location</button>
+      <div class="spinner"></div>
+      <div style="color:var(--muted);font-size:14px;margin-top:8px">Getting your location…</div>
     </div>
   </div>
 </div>
@@ -267,6 +265,10 @@ async function onPos(pos) {
   try {
     const [city, wx, aq] = await Promise.all([revGeocode(), fetchWx(), fetchAQ()]);
     S.city = city; S.wx = wx; S.aq = aq;
+    // Cache so next visit skips the GPS prompt
+    localStorage.setItem('ww-lat', S.lat);
+    localStorage.setItem('ww-lon', S.lon);
+    localStorage.setItem('ww-city', S.city);
     S.sliderStart = Math.max(0, new Date().getHours() - 1);
     render();
     document.getElementById('rbtn').disabled = false;
@@ -287,6 +289,10 @@ async function doSearch() {
     S.fetched = new Date(); spin('Fetching weather…');
     const [wx, aq] = await Promise.all([fetchWx(), fetchAQ()]);
     S.wx = wx; S.aq = aq;
+    // Cache searched location so it loads next time
+    localStorage.setItem('ww-lat', S.lat);
+    localStorage.setItem('ww-lon', S.lon);
+    localStorage.setItem('ww-city', S.city);
     S.sliderStart = Math.max(0, new Date().getHours() - 1);
     document.getElementById('search').value = '';
     render();
@@ -696,14 +702,48 @@ function spin(msg) {
   document.getElementById('body').innerHTML = `<div class="cscreen"><div class="spinner"></div><div style="color:var(--muted);font-size:14px;margin-top:6px">${msg}</div></div>`;
 }
 function showErr(msg) {
-  document.getElementById('body').innerHTML = `<div class="cscreen"><div class="big-icon">😕</div><div class="c-title" style="font-size:18px">Something went wrong</div><div class="c-sub">${msg}</div><button class="btn-go" onclick="startApp()">📍 Try location</button></div>`;
+  document.getElementById('body').innerHTML = `<div class="cscreen">
+    <div class="big-icon">😕</div>
+    <div class="c-title" style="font-size:18px">Could not get location</div>
+    <div class="c-sub">${msg}</div>
+    <div class="c-sub" style="margin-top:4px;font-size:13px">You can also enter a ZIP code or city in the search bar above.</div>
+    <button class="btn-go" onclick="startApp()">📍 Try again</button>
+  </div>`;
 }
 
-if (navigator.permissions) {
-  navigator.permissions.query({ name: 'geolocation' }).then(p => {
-    if (p.state === 'granted') startApp();
-  }).catch(() => {});
+// ── Init: restore cached location or request GPS ─────────────
+async function init() {
+  const lat  = parseFloat(localStorage.getItem('ww-lat') || '');
+  const lon  = parseFloat(localStorage.getItem('ww-lon') || '');
+  const city = localStorage.getItem('ww-city') || '';
+
+  if (lat && lon) {
+    // Restore cached location — no GPS prompt needed
+    S.lat = lat; S.lon = lon; S.city = city; S.fetched = new Date();
+    try {
+      const [wx, aq] = await Promise.all([fetchWx(), fetchAQ()]);
+      S.wx = wx; S.aq = aq;
+      S.sliderStart = Math.max(0, new Date().getHours() - 1);
+      render();
+      document.getElementById('rbtn').disabled = false;
+    } catch { startApp(); return; }
+
+    // Silently refresh GPS in background; only reload if moved >~1 km
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        if (Math.abs(pos.coords.latitude - S.lat) > 0.01 ||
+            Math.abs(pos.coords.longitude - S.lon) > 0.01) {
+          onPos(pos); // moved — reload with new location
+        }
+      }, () => {}, { timeout: 8000, maximumAge: 300000 });
+    }
+  } else {
+    // First visit — request GPS immediately (browser shows its native dialog)
+    startApp();
+  }
 }
+
+init();
 </script>
 </body>
 </html>
