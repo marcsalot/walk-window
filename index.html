@@ -248,18 +248,27 @@ applyTheme(S.theme);
 
 // ── Location & Search ────────────────────────────────────────
 
+let _geoTimer = null;
+
 function startApp() {
   if (!navigator.geolocation) { showErr('Geolocation not supported.'); return; }
   spin('Getting your location…');
-  navigator.geolocation.getCurrentPosition(onPos, onGeoErr, { timeout: 12000 });
+  clearTimeout(_geoTimer);
+  // Fallback: browsers on file:// or with silent blocks never fire the callback
+  _geoTimer = setTimeout(() => showErr(
+    'GPS is not responding. This is normal on local file:// URLs.'
+  ), 7000);
+  navigator.geolocation.getCurrentPosition(onPos, onGeoErr, { timeout: 10000, maximumAge: 60000 });
 }
 
 function onGeoErr(e) {
-  const m = {1:'Location denied. Enter a ZIP or city above.',2:'Cannot determine location.',3:'Location request timed out.'};
+  clearTimeout(_geoTimer);
+  const m = {1:'Location access was denied.',2:'Cannot determine location.',3:'Location request timed out.'};
   showErr(m[e.code] || 'Could not get location.');
 }
 
 async function onPos(pos) {
+  clearTimeout(_geoTimer);
   S.lat = pos.coords.latitude; S.lon = pos.coords.longitude; S.day = 0;
   S.fetched = new Date(); spin('Fetching weather…');
   try {
