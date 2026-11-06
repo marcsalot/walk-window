@@ -199,6 +199,61 @@ nav{position:sticky;top:0;z-index:300;background:var(--nav-bg);backdrop-filter:b
 .leg-dot{width:8px;height:8px;border-radius:50%}
 .leg-note{margin-left:auto;font-size:11px;color:var(--dim)}
 @media(max-width:460px){.leg-note{display:none}}
+
+/* ── UI POLISH ───────────────────────────────────────────── */
+/* Depth shadows per theme */
+:root,[data-theme="dark"]{--shadow:0 1px 4px rgba(0,0,0,.22),0 4px 14px rgba(0,0,0,.14)}
+[data-theme="midnight"],[data-theme="dusk"],[data-theme="ocean"],[data-theme="forest"]{--shadow:0 2px 6px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.2)}
+[data-theme="light"]{--shadow:0 1px 3px rgba(0,0,0,.07),0 2px 10px rgba(0,0,0,.04)}
+
+/* Hero — 2-column layout */
+.hero{padding:24px 22px;box-shadow:var(--shadow)}
+.hero-inner{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.hero-left{flex:1;min-width:0}
+.hero-right{text-align:right;flex-shrink:0}
+.hero-temp{font-family:'Archivo',sans-serif;font-size:52px;font-weight:900;letter-spacing:-.04em;line-height:1}
+.hero-cond{font-size:12px;color:var(--muted);margin-top:5px}
+.hero.safe .hero-temp{color:var(--safe)}
+.hero.caution .hero-temp{color:var(--caution)}
+.hero.danger .hero-temp{color:var(--danger)}
+.badge-pill{margin-bottom:8px}
+@media(max-width:420px){
+  .hero-inner{flex-direction:column;gap:10px}
+  .hero-right{text-align:left;display:flex;align-items:center;gap:14px}
+  .hero-temp{font-size:40px}
+}
+
+/* Condition cards — colored left border accent */
+.cc{border-left:3px solid var(--border);box-shadow:var(--shadow)}
+.lv-safe.cc{border-left-color:var(--safe)}
+.lv-caution.cc{border-left-color:var(--caution)}
+.lv-danger.cc{border-left-color:var(--danger)}
+
+/* Day picker — iOS-style segmented control */
+.day-picker{background:var(--s2);border-radius:11px;padding:4px;border:1px solid var(--border);gap:2px;margin-bottom:16px}
+.dpill{border:none;border-radius:8px;padding:6px 14px;background:transparent}
+.dpill:hover:not(.active){border:none;color:var(--text);background:color-mix(in srgb,var(--text) 6%,transparent)}
+.dpill.active{background:var(--s1);color:var(--text);border:none;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+
+/* Section header — colored left accent */
+.section-hd{display:flex;align-items:center;gap:7px}
+.section-hd::before{content:'';display:inline-block;width:3px;height:12px;background:var(--blue);border-radius:2px;flex-shrink:0}
+
+/* Boxes — consistent elevation */
+.windows-box,.chart-box,.hourly-wrap{box-shadow:var(--shadow)}
+
+/* Hourly — safety-tinted rows */
+tr.safe-row{background:color-mix(in srgb,var(--safe) 5%,transparent)}
+tr.caution-row{background:color-mix(in srgb,var(--caution) 7%,transparent)}
+tr.danger-row{background:color-mix(in srgb,var(--danger) 9%,transparent)}
+.htable tbody tr.now-row{background:var(--now-bg)!important}
+.htable tbody tr:hover{background:var(--s2)!important}
+
+/* Chart — grid lines behind bars */
+.chart-area{position:relative;overflow:hidden}
+.chart-grid{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding-bottom:0;pointer-events:none;z-index:0}
+.cgl{border-top:1px dashed var(--border);opacity:.5}
+.chart-bar-col{position:relative;z-index:1}
 </style>
 </head>
 <body>
@@ -501,11 +556,16 @@ function render() {
   const [bIcon, bText] = BADGE[cur.lvl];
   const reason = cur.warns.length ? cur.warns[0] : 'All conditions clear';
   const heroHtml = isToday ? `<div class="hero ${cur.lvl}">
-    <div class="badge-pill">
-      <span class="badge-icon">${bIcon}</span>${bText}
+    <div class="hero-inner">
+      <div class="hero-left">
+        <div class="badge-pill"><span class="badge-icon">${bIcon}</span>${bText}</div>
+        <div class="h-reason">${reason}</div>
+      </div>
+      <div class="hero-right">
+        <div class="hero-temp">${Math.round(cw.temperature)}°</div>
+        <div class="hero-cond">${wxi(cw.weathercode)} ${wxd(cw.weathercode)} · ${Math.round(cw.windspeed)} mph</div>
+      </div>
     </div>
-    <div class="h-conditions">${Math.round(cw.temperature)}°F · ${wxi(cw.weathercode)} ${wxd(cw.weathercode)} · ${Math.round(cw.windspeed)} mph</div>
-    <div class="h-reason">${reason}</div>
   </div>` : '';
 
   // Condition cards (today only)
@@ -564,7 +624,8 @@ function render() {
     const isNow = isToday && i === curI;
     const why   = hourWhy(a);
     const whyCls = `${a.lvl}-why`;
-    return `<tr${isNow ? ' class="now-row"' : ''}>
+    const rowCls = isNow ? 'now-row' : (a.lvl + '-row');
+    return `<tr class="${rowCls}">
       <td><div class="td-time-cell">${fmtH(dayTimes[i])}${isNow ? `<span class="now-tag">Now</span>` : ''}
         ${why ? `<div class="td-why ${whyCls}">${why}</div>` : ''}</div></td>
       <td class="td-dot"><span class="dsm d-${a.lvl}"></span></td>
@@ -592,8 +653,8 @@ function render() {
   document.getElementById('body').innerHTML =
     heroHtml + cardsHtml + dpHtml +
     `<div class="windows-box"><div class="section-hd">Best walk times</div>${winsHtml}</div>` +
-    `<div class="section-hd">Charts</div><div id="chart-wrap"></div>` +
-    `<div class="section-hd">Hour by hour</div>` + hourlyHtml +
+    `<div class="section-hd" style="margin-top:20px">Charts</div><div id="chart-wrap"></div>` +
+    `<div class="section-hd" style="margin-top:20px">Hour by hour</div>` + hourlyHtml +
     `<div class="legend">
       <div class="leg-i"><div class="leg-dot" style="background:var(--safe)"></div>Safe</div>
       <div class="leg-i"><div class="leg-dot" style="background:var(--caution)"></div>Caution</div>
@@ -659,13 +720,15 @@ function updateChart() {
       </div>`
     : `<div class="slider-row" style="justify-content:flex-end"><span class="rl">${startLabel} – ${endLabel}</span></div>`;
 
+  const gridHtml = `<div class="chart-grid"><div class="cgl"></div><div class="cgl"></div><div class="cgl"></div></div>`;
+
   wrap.innerHTML = `<div class="chart-box">
     <div class="chart-tabs">
       <button class="ctab${S.chartMode === 'rain' ? ' active' : ''}" onclick="setChart('rain')">🌧 Rain</button>
       <button class="ctab${S.chartMode === 'temp' ? ' active' : ''}" onclick="setChart('temp')">🌡 Temp</button>
     </div>
     <div class="chart-y-label">${yLabel}</div>
-    <div class="chart-area" id="chart-bars">${makeBars(vis, visTimes)}</div>
+    <div class="chart-area" id="chart-bars">${gridHtml}${makeBars(vis, visTimes)}</div>
     <div class="chart-labels" id="chart-lbls">${labels}</div>
     ${sliderHtml}
   </div>`;
@@ -678,7 +741,8 @@ function handleSlider(val) {
   const bars = document.getElementById('chart-bars');
   const lbls = document.getElementById('chart-lbls');
   const rl   = document.getElementById('chart-rl');
-  if (bars) bars.innerHTML = makeBars(vis, visTimes);
+  const grid = `<div class="chart-grid"><div class="cgl"></div><div class="cgl"></div><div class="cgl"></div></div>`;
+  if (bars) bars.innerHTML = grid + makeBars(vis, visTimes);
   if (lbls) lbls.innerHTML = visTimes.map(t => `<div class="clabel">${fmtH(t)}</div>`).join('');
   if (rl && visTimes.length) rl.textContent = `${fmtH(visTimes[0])} – ${fmtH(visTimes[visTimes.length - 1])}`;
 }
