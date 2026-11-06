@@ -238,6 +238,7 @@ const GEO_SEARCH  = 'https://geocoding-api.open-meteo.com/v1/search';
 
 const THEMES     = ['dark','midnight','dusk','ocean','forest','light'];
 const THEME_ICON = {dark:'🌙',midnight:'⭐',dusk:'🌅',ocean:'🌊',forest:'🌲',light:'☀️'};
+const THEME_BG   = {dark:'#0A0C10',midnight:'#07090D',dusk:'#14101E',ocean:'#06111F',forest:'#0B1810',light:'#F0F4F8'};
 
 let S = {
   lat:null, lon:null, city:'', wx:null, aq:null, fetched:null,
@@ -691,7 +692,6 @@ function selectDay(d) {
 
 // ── Theme ─────────────────────────────────────────────────────
 
-const THEME_BG = {dark:'#0A0C10',midnight:'#07090D',dusk:'#14101E',ocean:'#06111F',forest:'#0B1810',light:'#F0F4F8'};
 function applyTheme(t) {
   document.documentElement.setAttribute('data-theme', t);
   const btn = document.getElementById('tbtn');
